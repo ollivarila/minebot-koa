@@ -1,0 +1,30 @@
+{
+  "name": "minebot-koa",
+  "version": "1.0.0",
+  "description": "Minebot implementation with Koa framework",
+  "main": "index.js",
+  "scripts": {
+    "prestart": "tsc",
+    "dev": "nodemon index.ts",
+    "start": "node ./dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Olli Varila",
+  "license": "ISC",
+  "dependencies": {
+    "@koa/router": "^12.0.0",
+    "@types/koa__router": "^12.0.0",
+    "axios": "^1.3.3",
+    "discord-interactions": "^3.3.0",
+    "discord.js": "^14.7.1",
+    "koa": "^2.14.1",
+    "koa-bodyparser": "^4.3.0",
+    "raw-body": "^2.5.1"
+  },
+  "devDependencies": {
+    "@types/koa": "^2.13.5",
+    "@types/koa-bodyparser": "^4.3.10",
+    "@types/node": "^18.13.0",
+    "dotenv": "^16.0.3"
+  }
+}
