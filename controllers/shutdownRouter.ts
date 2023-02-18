@@ -1,12 +1,15 @@
 import Router from '@koa/router'
-import { Context } from 'koa'
+import { MyContext } from './interactionRouter'
+import { tokenParser } from '../utils/middleware'
 
 const shutdownRouter = new Router()
 
-shutdownRouter.post('/api/server/shutdown', async (ctx: Context) => {
-  ctx.body = {
-    message: 'shutting down',
-  }
+
+shutdownRouter.use(tokenParser)
+
+shutdownRouter.post('/api/server/shutdown', async (ctx: MyContext) => {
+  
+
 })
 
 export default shutdownRouter.routes()
