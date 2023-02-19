@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 import { Context, DefaultState } from 'koa'
 import { InteractionResponseType, InteractionType, User } from 'discord.js'
 import { ReplyFunction } from '../utils/reply'
-import ServerController from './ServerController'
+import ServerController from '../controllers/ServerController'
 
 interface MyState extends DefaultState {
 	discordId: DiscordId

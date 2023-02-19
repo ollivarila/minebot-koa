@@ -1,10 +1,10 @@
 import Koa, { Context, DefaultContext, DefaultState } from 'koa'
 import dotenv from 'dotenv'
-import interactionRouter from './controllers/interactionRouter'
+import interactionRouter from './routers/interactionRouter'
 import bodyParser from 'koa-bodyparser'
 import { reply } from './utils/reply'
-import shutdownRouter from './controllers/shutdownRouter'
-import helloRouter from './controllers/helloRouter'
+import shutdownRouter from './routers/shutdownRouter'
+import helloRouter from './routers/helloRouter'
 import ServerController from './controllers/ServerController'
 
 dotenv.config()
