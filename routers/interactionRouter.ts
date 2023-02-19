@@ -1,10 +1,10 @@
-import Router from '@koa/router'
 import { channelIdParser, userParser, verifyDiscordRequest } from '../utils/middleware'
 import dotenv from 'dotenv'
 import { Context, DefaultState } from 'koa'
 import { InteractionResponseType, InteractionType, User } from 'discord.js'
 import { ReplyFunction } from '../utils/reply'
 import ServerController from '../controllers/ServerController'
+import Router from '@koa/router'
 
 interface MyState extends DefaultState {
 	discordId: DiscordId
@@ -37,30 +37,31 @@ const authorizedUsers: Array<DiscordId> = [
 
 dotenv.config()
 
-const interactionRouter = new Router()
+const interactionRouter: Router = new Router()
 
-interactionRouter.post(
-	'/api/interactions',
-	verifyDiscordRequest,
-	userParser,
-	channelIdParser,
-	async (ctx: MyContext): Promise<void> => {
-		// @ts-expect-error
-		const type: number = ctx.request.body.type
+interactionRouter.use(verifyDiscordRequest)
 
-		if (type === InteractionType.Ping) {
-			ctx.body = {
-				type: InteractionResponseType.Pong,
-			}
-			return
+interactionRouter.use(userParser)
+
+// @ts-expect-error
+interactionRouter.use(channelIdParser)
+
+interactionRouter.post('/api/interactions', async (ctx: MyContext): Promise<void> => {
+	// @ts-expect-error
+	const type: number = ctx.request.body.type
+
+	if (type === InteractionType.Ping) {
+		ctx.body = {
+			type: InteractionResponseType.Pong,
 		}
-
-		if (type === InteractionType.ApplicationCommand) {
-			await handleInteractions(ctx)
-			return
-		}
+		return
 	}
-)
+
+	if (type === InteractionType.ApplicationCommand) {
+		await handleInteractions(ctx)
+		return
+	}
+})
 
 async function handleInteractions(ctx: MyContext): Promise<void> {
 	// @ts-expect-error
