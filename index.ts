@@ -6,6 +6,7 @@ import { reply } from './utils/reply'
 import shutdownRouter from './routers/shutdownRouter'
 import helloRouter from './routers/helloRouter'
 import ServerController from './controllers/ServerController'
+import logger from 'koa-logger'
 
 dotenv.config()
 
@@ -19,11 +20,14 @@ if (!hostname) {
 
 app.context.reply = reply
 app.context.server = new ServerController(hostname)
+
+app.use(logger())
+
 app.use(bodyParser())
 
 app.use(interactionRouter)
 
-// app.use(shutdownRouter)
+app.use(shutdownRouter)
 
 app.use(helloRouter)
 
