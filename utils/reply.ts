@@ -1,6 +1,6 @@
 import { Context } from 'koa'
 import { InteractionResponseType } from 'discord.js'
-import { MyContext } from '../controllers/interactionRouter'
+import { MyContext } from '../routers/interactionRouter'
 
 export type ReplyFunction = (data: string | object, ctx: MyContext) => void
 

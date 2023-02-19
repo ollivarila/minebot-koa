@@ -1,9 +1,9 @@
 import { verifyKey } from 'discord-interactions'
 import { Context, Next } from 'koa'
 import dotenv from 'dotenv'
-import { DiscordId, MyContext } from '../controllers/interactionRouter'
+import { DiscordId, MyContext } from '../routers/interactionRouter'
 import { HttpStatusCode } from 'axios'
-import { Monitor } from '../controllers/interactionRouter'
+import { Monitor } from '../routers/interactionRouter'
 
 dotenv.config()
 
@@ -53,26 +53,13 @@ export const channelIdParser = async (ctx: MyContext, next: Next): Promise<void>
 	}
 }
 
-export const tokenParser = async (ctx: Context, next: Next): Promise<void> => {
+export const checkAuth = async (ctx: Context, next: Next): Promise<void> => {
 	const authHeader: string = ctx.get('Authorization')
-	ctx.assert(authHeader, HttpStatusCode.Unauthorized)
+	ctx.assert(authHeader, HttpStatusCode.Unauthorized, 'No token provided')
 
 	const token: string | undefined = authHeader.split(/\s/).pop()
 
-	ctx.assert(token === process.env.MY_TOKEN, HttpStatusCode.Unauthorized)
+	ctx.assert(token === process.env.MY_TOKEN, HttpStatusCode.Unauthorized, 'Token invalid')
 
 	await next()
-}
-
-export const interactionErrorHandler = async (ctx: MyContext, next: Next): Promise<void> => {
-	try {
-		console.log('errorhandler 1 ')
-		await next()
-		console.log('errorhandler 2 ')
-	} catch (error: any) {
-		console.log('ERROR HAPPENED')
-		console.error(error.message)
-		// Request needs to succeed when replying to discord
-		// ctx.reply(`Something unexpected happened: ${error.message}`, ctx)
-	}
 }

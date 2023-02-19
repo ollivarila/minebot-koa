@@ -1,15 +1,16 @@
 import Router from '@koa/router'
 import { MyContext } from './interactionRouter'
-import { tokenParser } from '../utils/middleware'
+import { checkAuth } from '../utils/middleware'
+import { HttpStatusCode } from 'axios'
 
 const shutdownRouter = new Router()
 
+shutdownRouter.post('/api/server/shutdown', checkAuth, async (ctx: MyContext) => {
+	const response: string = await ctx.server.stop()
 
-shutdownRouter.use(tokenParser)
+	ctx.assert(response === 'Stopping server...', HttpStatusCode.InternalServerError)
 
-shutdownRouter.post('/api/server/shutdown', async (ctx: MyContext) => {
-  
-
+	ctx.status = HttpStatusCode.NoContent
 })
 
 export default shutdownRouter.routes()
