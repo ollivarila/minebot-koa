@@ -1,11 +1,10 @@
 import { channelIdParser, userParser, verifyDiscordRequest } from '../utils/middleware'
 import dotenv from 'dotenv'
 import { Context, DefaultState } from 'koa'
-import { InteractionResponseType, InteractionType, User } from 'discord.js'
+import { InteractionResponseType, InteractionType } from 'discord.js'
 import { ReplyFunction } from '../utils/reply'
 import ServerController from '../controllers/ServerController'
 import Router from 'koa-router'
-import { sendMessageToChannel } from '../utils/discordRequests'
 import EmbedFactory from '../utils/EmbedFactory'
 
 interface MyState extends DefaultState {
@@ -45,6 +44,7 @@ const interactionRouter: Router = new Router()
 // @ts-ignore
 interactionRouter.post(
 	'/api/interactions',
+	// @ts-ignore
 	verifyDiscordRequest,
 	userParser,
 	channelIdParser,

@@ -4,7 +4,7 @@ import axios, { AxiosResponse, RawAxiosRequestHeaders } from 'axios'
 import TokenManager from './TokenManager'
 import { sendMessageToChannel } from '../utils/discordRequests'
 import { MyContext } from '../routers/interactionRouter'
-import { TransformStreamDefaultController } from 'node:stream/web'
+import Logger from '../utils/Logger'
 
 dotenv.config()
 
@@ -46,12 +46,13 @@ export default class ServerController {
 		}
 
 		try {
-			console.log('Authenticating...')
+			Logger.log('Authenticating...')
 			const response = await axios.post(url, qs.stringify(data), {
 				headers,
 			})
+
 			this.tokenManager.setToken(response.data['access_token'])
-			console.log('Authenticated', await this.tokenManager.tokenIsValid())
+			Logger.log('Authenticated', this.tokenManager.tokenIsValid())
 		} catch (error) {
 			this.tokenManager.resetToken()
 		}
@@ -69,7 +70,7 @@ export default class ServerController {
 		const response: ContainerResponse = await this.dispatchContainerAction('status')
 
 		if (!response) {
-			console.log('monitorStartUp: Something unexpected happened')
+			Logger.log('monitorStartUp: Something unexpected happened')
 			return
 		}
 
@@ -79,16 +80,16 @@ export default class ServerController {
 			const state: ContainerState = container.properties?.instanceView?.currentState?.state
 
 			if (state === 'Running') {
-				console.log('Server is up and running')
+				Logger.log('Server is up and running')
 				sendMessageToChannel(ctx.embedFactory.startedUpEmbed(process.env.HOSTNAME!), ctx.channelId)
 
 				return
 			}
 		} catch (error: any) {
-			console.log(error.message)
+			Logger.log(error.message)
 		}
 
-		console.log('Server is still starting up')
+		Logger.log('Server is still starting up')
 		setTimeout(() => this.monitorStartUp(ctx), 5_000)
 	}
 
@@ -97,7 +98,7 @@ export default class ServerController {
 		const response: ContainerResponse = await this.dispatchContainerAction('status')
 
 		if (!response) {
-			console.log('monitorShutDown: Something unexpected happened')
+			Logger.log('monitorShutDown: Something unexpected happened')
 			return
 		}
 		try {
@@ -105,42 +106,42 @@ export default class ServerController {
 			const state: string = properties.instanceView.state
 
 			if (state === 'Stopped') {
-				console.log('Server is down')
+				Logger.log('Server is down')
 				sendMessageToChannel(ctx.embedFactory.stoppedEmbed(), ctx.channelId)
 				return
 			}
 		} catch (error: any) {
-			console.log(error.message)
+			Logger.log(error.message)
 		}
 
-		console.log('Server is still shutting down')
+		Logger.log('Server is still shutting down')
 		setTimeout(() => this.monitorShutDown(ctx), 5_000)
 	}
 
 	public async start(): Promise<void> {
 		try {
-			console.log('Starting server...')
+			Logger.log('Starting server...')
 			await this.verifyAuth()
 			await this.dispatchContainerAction('start')
 		} catch (error: any) {
-			console.error('Something went wrong with start:\n' + error.message)
+			Logger.error('Something went wrong with start:\n' + error.message)
 			throw error
 		}
 	}
 
 	public async stop(): Promise<void> {
 		try {
-			console.log('Stopping server...')
+			Logger.log('Stopping server...')
 			await this.verifyAuth()
 			await this.dispatchContainerAction('stop')
 		} catch (error: any) {
-			console.error('Something went wrong with stop:\n' + error.message)
+			Logger.error('Something went wrong with stop:\n' + error.message)
 			throw error
 		}
 	}
 
 	public async status(): Promise<string> {
-		console.log('Checking server status...')
+		Logger.log('Checking server status...')
 		await this.verifyAuth()
 
 		const response: ContainerResponse = await this.dispatchContainerAction('status')
@@ -157,7 +158,7 @@ export default class ServerController {
 	}
 
 	public async getIp(): Promise<string> {
-		console.log('Getting server ip...')
+		Logger.log('Getting server ip...')
 		await this.verifyAuth()
 		const response: ContainerResponse = await this.dispatchContainerAction('status')
 
@@ -193,6 +194,7 @@ export default class ServerController {
 			}
 
 			const url: string = `https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.ContainerInstance/containerGroups/${CONTAINER_GROUP}/${action}?api-version=2022-10-01-preview`
+			console.log(url)
 			return axios.post(url, undefined, {
 				headers,
 			})

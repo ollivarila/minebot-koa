@@ -8,6 +8,7 @@ import helloRouter from './routers/helloRouter'
 import ServerController from './controllers/ServerController'
 import logger from 'koa-logger'
 import EmbedFactory from './utils/EmbedFactory'
+import Logger from './utils/Logger'
 
 dotenv.config()
 

@@ -3,17 +3,15 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-const token: string | undefined = process.env.DISCORD_TOKEN
-
 const discordBaseUrl: string = 'https://discord.com/api/v10'
-
-if (!token) throw new Error('No token provided!')
 
 export const discordRequest = async (
 	endpoint: string,
 	data: any,
 	options: any
 ): Promise<AxiosResponse<any, any> | null> => {
+	const token: string | undefined = process.env.DISCORD_TOKEN
+	if (!token) throw new Error('No token provided!')
 	try {
 		const url: string = `${discordBaseUrl}${endpoint}`
 		const headers: RawAxiosRequestHeaders = {
