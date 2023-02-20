@@ -26,11 +26,11 @@ export default class TokenManager {
 	}
 
 	public tokenIsValid(): boolean {
-		if (this.tokenGranted === undefined) {
+		if (!this.token) {
 			return false
 		}
 
-		if (this.token === undefined) {
+		if (!this.tokenGranted) {
 			return false
 		}
 

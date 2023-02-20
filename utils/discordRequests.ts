@@ -33,11 +33,21 @@ export const discordRequest = async (
 }
 
 export const sendMessageToChannel = async (
-	message: string,
+	message: string | object,
 	channelId: string
 ): Promise<AxiosResponse<any, any> | null> => {
-	const data = {
-		content: message,
+	let data: object = {}
+
+	if (typeof message === 'object') {
+		data = {
+			embeds: [message],
+		}
+	}
+
+	if (typeof message === 'string') {
+		data = {
+			content: message,
+		}
 	}
 
 	return await discordRequest(`/channels/${channelId}/messages`, data, {

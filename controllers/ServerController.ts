@@ -3,6 +3,8 @@ import qs from 'qs'
 import axios, { AxiosResponse, RawAxiosRequestHeaders } from 'axios'
 import TokenManager from './TokenManager'
 import { sendMessageToChannel } from '../utils/discordRequests'
+import { MyContext } from '../routers/interactionRouter'
+import { TransformStreamDefaultController } from 'node:stream/web'
 
 dotenv.config()
 
@@ -49,19 +51,21 @@ export default class ServerController {
 				headers,
 			})
 			this.tokenManager.setToken(response.data['access_token'])
-			console.log('Authenticated')
+			console.log('Authenticated', await this.tokenManager.tokenIsValid())
 		} catch (error) {
 			this.tokenManager.resetToken()
 		}
 	}
 
 	private async verifyAuth(): Promise<void> {
-		if (!this.tokenManager.tokenIsValid()) {
+		const tokenValid: boolean = this.tokenManager.tokenIsValid()
+		if (!tokenValid) {
 			await this.authenticate()
 		}
 	}
 
-	public async monitorStartUp(channelId: string): Promise<void> {
+	public async monitorStartUp(ctx: MyContext): Promise<void> {
+		await this.verifyAuth()
 		const response: ContainerResponse = await this.dispatchContainerAction('status')
 
 		if (!response) {
@@ -72,12 +76,11 @@ export default class ServerController {
 		try {
 			const { properties } = response.data
 			const container = properties.containers.pop()
-			console.log(container.properties.instanceView.currentState)
-			const state: ContainerState = container.properties.instanceView.currentState.state
+			const state: ContainerState = container.properties?.instanceView?.currentState?.state
 
 			if (state === 'Running') {
 				console.log('Server is up and running')
-				sendMessageToChannel('Server is up and running', channelId)
+				sendMessageToChannel(ctx.embedFactory.startedUpEmbed(process.env.HOSTNAME!), ctx.channelId)
 
 				return
 			}
@@ -86,10 +89,11 @@ export default class ServerController {
 		}
 
 		console.log('Server is still starting up')
-		setTimeout(() => this.monitorStartUp(channelId), 5_000)
+		setTimeout(() => this.monitorStartUp(ctx), 5_000)
 	}
 
-	public async monitorShutDown(channelId: string): Promise<void> {
+	public async monitorShutDown(ctx: MyContext): Promise<void> {
+		await this.verifyAuth()
 		const response: ContainerResponse = await this.dispatchContainerAction('status')
 
 		if (!response) {
@@ -102,7 +106,7 @@ export default class ServerController {
 
 			if (state === 'Stopped') {
 				console.log('Server is down')
-				sendMessageToChannel('Server stopped succesfully!', channelId)
+				sendMessageToChannel(ctx.embedFactory.stoppedEmbed(), ctx.channelId)
 				return
 			}
 		} catch (error: any) {
@@ -110,95 +114,63 @@ export default class ServerController {
 		}
 
 		console.log('Server is still shutting down')
-		setTimeout(() => this.monitorShutDown(channelId), 5_000)
+		setTimeout(() => this.monitorShutDown(ctx), 5_000)
 	}
 
-	public async start(): Promise<string> {
+	public async start(): Promise<void> {
 		try {
 			console.log('Starting server...')
 			await this.verifyAuth()
-			const response: ContainerResponse = await this.dispatchContainerAction('start')
-
-			if (!response) {
-				return 'Error with dispatching container action'
-			}
-
-			if (response.status === 202) {
-				return 'Monitoring startup...'
-			}
-
-			if (response.status === 204) {
-				return 'Server is already running!'
-			}
-
-			return 'Something unexpected happened'
+			await this.dispatchContainerAction('start')
 		} catch (error: any) {
-			return 'Something went wrong with start\n' + error.message
+			console.error('Something went wrong with start:\n' + error.message)
+			throw error
 		}
 	}
 
-	public async stop(): Promise<string> {
+	public async stop(): Promise<void> {
 		try {
 			console.log('Stopping server...')
 			await this.verifyAuth()
-
-			const response: ContainerResponse = await this.dispatchContainerAction('stop')
-
-			if (!response) {
-				return 'Error with dispatching container action'
-			}
-
-			if (response.status === 204) {
-				return 'Stopping server...'
-			}
-
-			return 'Something unexpected happened'
+			await this.dispatchContainerAction('stop')
 		} catch (error: any) {
-			return 'Something went wrong with stop:\n' + error.message
+			console.error('Something went wrong with stop:\n' + error.message)
+			throw error
 		}
 	}
 
 	public async status(): Promise<string> {
-		try {
-			console.log('Checking server status...')
-			await this.verifyAuth()
+		console.log('Checking server status...')
+		await this.verifyAuth()
 
-			const response: ContainerResponse = await this.dispatchContainerAction('status')
+		const response: ContainerResponse = await this.dispatchContainerAction('status')
 
-			if (!response) {
-				return 'Something unexpected happened'
-			}
-			const { properties } = response.data
-			const container = properties.containers.pop()
-			const state: ContainerState = container.properties.instanceView.currentState.state
-
-			return `Server state: ${state}\nServer address: ${
-				state === 'Running' ? this.hostname : "wait for until state is 'Running'"
-			}`
-		} catch (error: any) {
-			return 'Something went wrong with status:\n' + error.message
+		if (!response) {
+			throw new Error('Failed to get container status')
 		}
+
+		const { properties } = response.data
+		const container = properties.containers.pop()
+		const state: ContainerState = container.properties.instanceView.currentState.state
+
+		return state
 	}
 
 	public async getIp(): Promise<string> {
-		try {
-			console.log('Getting server ip...')
-			await this.verifyAuth()
-			const response: ContainerResponse = await this.dispatchContainerAction('status')
+		console.log('Getting server ip...')
+		await this.verifyAuth()
+		const response: ContainerResponse = await this.dispatchContainerAction('status')
 
-			// @ts-ignore
-			const { properties } = response.data
-			const container = properties.containers.pop()
-			const state: ContainerState = container.properties.instanceView.currentState.state
+		// @ts-ignore
+		const { properties } = response.data
+		const container = properties.containers.pop()
+		const state: ContainerState = container.properties.instanceView.currentState.state
 
-			if (state === 'Running') {
-				return `Server address: ***${this.hostname}***`
-			}
-
-			return "Server state is not yet 'Running'"
-		} catch (error: any) {
-			return 'Something went wrong with getIp:\n' + error.message
+		if (state === 'Running') {
+			return this.hostname
 		}
+
+		return "Server state is not yet 'Running'"
 	}
 
 	private async dispatchContainerAction(action: ContainerAction): Promise<ContainerResponse> {

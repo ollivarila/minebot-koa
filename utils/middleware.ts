@@ -39,18 +39,16 @@ export const channelIdParser = async (ctx: MyContext, next: Next): Promise<void>
 	}
 	await next()
 
-	switch (ctx.state.monitor) {
-		case Monitor.STARTUP:
-			ctx.server.monitorStartUp(ctx.state.channelId)
-			break
-		case Monitor.SHUTDOWN:
-			ctx.server.monitorShutDown(ctx.state.channelId)
-			break
-		case Monitor.NOTHING:
-			break
-		default:
-			break
-	}
+	// switch (ctx.state.monitor) {
+	// 	case Monitor.STARTUP:
+	// 		ctx.server.monitorStartUp(ctx.state.channelId)
+	// 	case Monitor.SHUTDOWN:
+	// 		ctx.server.monitorShutDown(ctx.state.channelId)
+	// 	case Monitor.NOTHING:
+	// 		break
+	// 	default:
+	// 		break
+	// }
 }
 
 export const checkAuth = async (ctx: Context, next: Next): Promise<void> => {

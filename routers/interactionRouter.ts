@@ -4,7 +4,9 @@ import { Context, DefaultState } from 'koa'
 import { InteractionResponseType, InteractionType, User } from 'discord.js'
 import { ReplyFunction } from '../utils/reply'
 import ServerController from '../controllers/ServerController'
-import Router from '@koa/router'
+import Router from 'koa-router'
+import { sendMessageToChannel } from '../utils/discordRequests'
+import EmbedFactory from '../utils/EmbedFactory'
 
 interface MyState extends DefaultState {
 	discordId: DiscordId
@@ -16,6 +18,7 @@ export interface MyContext extends Context {
 	reply: ReplyFunction
 	state: MyState
 	server: ServerController
+	embedFactory: EmbedFactory
 }
 
 export type DiscordId = string
@@ -39,29 +42,29 @@ dotenv.config()
 
 const interactionRouter: Router = new Router()
 
-interactionRouter.use(verifyDiscordRequest)
+// @ts-ignore
+interactionRouter.post(
+	'/api/interactions',
+	verifyDiscordRequest,
+	userParser,
+	channelIdParser,
+	async (ctx: MyContext): Promise<void> => {
+		// @ts-expect-error
+		const type: number = ctx.request.body.type
 
-interactionRouter.use(userParser)
-
-// @ts-expect-error
-interactionRouter.use(channelIdParser)
-
-interactionRouter.post('/api/interactions', async (ctx: MyContext): Promise<void> => {
-	// @ts-expect-error
-	const type: number = ctx.request.body.type
-
-	if (type === InteractionType.Ping) {
-		ctx.body = {
-			type: InteractionResponseType.Pong,
+		if (type === InteractionType.Ping) {
+			ctx.body = {
+				type: InteractionResponseType.Pong,
+			}
+			return
 		}
-		return
-	}
 
-	if (type === InteractionType.ApplicationCommand) {
-		await handleInteractions(ctx)
-		return
+		if (type === InteractionType.ApplicationCommand) {
+			await handleInteractions(ctx)
+			return
+		}
 	}
-})
+)
 
 async function handleInteractions(ctx: MyContext): Promise<void> {
 	// @ts-expect-error
@@ -91,13 +94,16 @@ async function handleServerUp(ctx: MyContext): Promise<void> {
 		ctx.reply('You are not authorized!', ctx)
 		return
 	}
-	const message: string = await ctx.server.start()
 
-	if (message !== 'Server is already running!') {
-		ctx.state.monitor = Monitor.STARTUP
+	try {
+		ctx.server.start()
+	} catch (error: any) {
+		ctx.reply(ctx.embedFactory.errorEmbed(error.message), ctx)
 	}
 
-	ctx.reply(message, ctx)
+	ctx.server.monitorStartUp(ctx)
+
+	await ctx.reply('Starting server...', ctx)
 }
 
 async function handleServerDown(ctx: MyContext): Promise<void> {
@@ -105,20 +111,34 @@ async function handleServerDown(ctx: MyContext): Promise<void> {
 		ctx.reply('You are not authorized!', ctx)
 		return
 	}
-	const message: string = await ctx.server.stop()
 
-	ctx.state.monitor = Monitor.SHUTDOWN
-	ctx.reply(message, ctx)
+	try {
+		await ctx.server.stop()
+	} catch (error: any) {
+		ctx.reply(ctx.embedFactory.errorEmbed(error.message), ctx)
+	}
+
+	ctx.server.monitorShutDown(ctx)
+
+	await ctx.reply('Stopping server...', ctx)
 }
 
 async function handleGetIp(ctx: MyContext): Promise<void> {
-	const message: string = await ctx.server.getIp()
-	ctx.reply(message, ctx)
+	try {
+		const ip: string = await ctx.server.getIp()
+		ctx.reply(ctx.embedFactory.ipEmbed(ip), ctx)
+	} catch (error: any) {
+		ctx.reply(ctx.embedFactory.errorEmbed(error.message), ctx)
+	}
 }
 
 async function handleGetStatus(ctx: MyContext): Promise<void> {
-	const message: string = await ctx.server.status()
-	ctx.reply(message, ctx)
+	try {
+		const status: string = await ctx.server.status()
+		ctx.reply(ctx.embedFactory.statusEmbed(status, process.env.HOSTNAME!), ctx)
+	} catch (error: any) {
+		ctx.reply(ctx.embedFactory.errorEmbed(error.message), ctx)
+	}
 }
 
 function authorized(discordId: DiscordId): boolean {

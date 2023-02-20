@@ -7,6 +7,7 @@ import shutdownRouter from './routers/shutdownRouter'
 import helloRouter from './routers/helloRouter'
 import ServerController from './controllers/ServerController'
 import logger from 'koa-logger'
+import EmbedFactory from './utils/EmbedFactory'
 
 dotenv.config()
 
@@ -20,6 +21,7 @@ if (!hostname) {
 
 app.context.reply = reply
 app.context.server = new ServerController(hostname)
+app.context.embedFactory = new EmbedFactory()
 
 app.use(logger())
 
