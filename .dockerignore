@@ -1,0 +1,9 @@
+fly.toml
+Dockerfile
+.dockerignore
+node_modules
+.git
+jest.config.js
+
+test
+coverage

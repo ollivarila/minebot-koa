@@ -9,7 +9,8 @@
 		"start": "NODE_ENV=production node ./dist/index.js",
 		"test": "NODE_ENV=test jest --verbose --watchAll --detectOpenHandles --forceExit",
 		"test:ci": "NODE_ENV=test jest --verbose --detectOpenHandles --forceExit --runInBand",
-		"test:coverage": "NODE_ENV=test jest --verbose --detectOpenHandles --forceExit --runInBand --coverage"
+		"test:coverage": "NODE_ENV=test jest --verbose --detectOpenHandles --forceExit --runInBand --coverage",
+		"deploy": "npm run build && fly deploy"
 	},
 	"author": "Olli Varila",
 	"license": "ISC",
@@ -21,7 +22,8 @@
 		"koa-bodyparser": "^4.3.0",
 		"koa-logger": "^3.2.1",
 		"koa-router": "^12.0.0",
-		"qs": "^6.11.0"
+		"qs": "^6.11.0",
+		"typescript": "^4.9.5"
 	},
 	"devDependencies": {
 		"@types/jest": "^29.4.0",
@@ -35,7 +37,6 @@
 		"dotenv": "^16.0.3",
 		"jest": "^29.4.3",
 		"ts-jest": "^29.0.5",
-		"ts-node": "^10.9.1",
-		"tsc": "^2.0.4"
+		"ts-node": "^10.9.1"
 	}
 }

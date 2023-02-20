@@ -11,7 +11,7 @@ describe('Discord Requests', () => {
 			const endpoint: string = '/mockEndpoint'
 			process.env.DISCORD_TOKEN = 'token'
 
-			await discordRequest(endpoint, {}, { method: 'GET' })
+			await discordRequest(endpoint, { method: 'GET' })
 
 			const authHeader: string = axiosMock?.history?.get[0]?.headers?.Authorization
 
@@ -21,7 +21,7 @@ describe('Discord Requests', () => {
 		it('sends request to the correct url', async () => {
 			const endpoint: string = '/mockEndpoint'
 
-			await discordRequest(endpoint, {}, { method: 'GET' })
+			await discordRequest(endpoint, { method: 'GET' })
 
 			const url: string | undefined = axiosMock?.history?.get[0]?.url
 
