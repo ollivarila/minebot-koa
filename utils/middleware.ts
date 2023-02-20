@@ -13,12 +13,8 @@ export const verifyDiscordRequest = async (ctx: MyContext, next: Next): Promise<
 	const signature: string = ctx.get('X-Signature-Ed25519')!
 	const timestamp: string = ctx.get('X-Signature-Timestamp')!
 
-	try {
-		const verified: boolean = verifyKey(rawBody, signature, timestamp, process.env.PUBLIC_KEY!)
-		ctx.assert(verified, 401, 'invalid request signature')
-	} catch (error) {
-		Logger.log('error', error)
-	}
+	const verified: boolean = verifyKey(rawBody, signature, timestamp, process.env.PUBLIC_KEY!)
+	ctx.assert(verified, 401, 'invalid request signature')
 	await next()
 }
 

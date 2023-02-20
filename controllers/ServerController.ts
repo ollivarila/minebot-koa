@@ -81,7 +81,7 @@ export default class ServerController {
 
 			if (state === 'Running') {
 				Logger.log('Server is up and running')
-				sendMessageToChannel(ctx.embedFactory.startedUpEmbed(process.env.HOSTNAME!), ctx.channelId)
+				sendMessageToChannel(ctx.embedFactory.startedUpEmbed(process.env.HOSTNAME!), ctx.state.channelId)
 
 				return
 			}
@@ -107,7 +107,7 @@ export default class ServerController {
 
 			if (state === 'Stopped') {
 				Logger.log('Server is down')
-				sendMessageToChannel(ctx.embedFactory.stoppedEmbed(), ctx.channelId)
+				sendMessageToChannel(ctx.embedFactory.stoppedEmbed(), ctx.state.channelId)
 				return
 			}
 		} catch (error: any) {
