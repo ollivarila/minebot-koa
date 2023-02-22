@@ -6,8 +6,6 @@ import { HttpStatusCode } from 'axios'
 import { Monitor } from '../routers/interactionRouter'
 import Logger from './Logger'
 
-dotenv.config()
-
 export const verifyDiscordRequest = async (ctx: MyContext, next: Next): Promise<void> => {
   const rawBody: string = ctx.request.rawBody
   const signature: string = ctx.get('X-Signature-Ed25519')!
@@ -43,15 +41,9 @@ export const channelIdParser = async (ctx: Context, next: Next): Promise<void> =
 export const checkAuth = async (ctx: Context, next: Next): Promise<void> => {
   const authHeader: string = ctx.get('Authorization')
 
-  dotenv.config()
-
-  console.log(authHeader)
   ctx.assert(authHeader !== '', HttpStatusCode.Unauthorized, 'No token provided')
 
   const token: string | undefined = authHeader.split(/\s/).pop()
-
-  console.log(token, process.env.MY_TOKEN)
-  console.log(token === process.env.MY_TOKEN)
 
   ctx.assert(token === process.env.MY_TOKEN, HttpStatusCode.Unauthorized, 'Token invalid')
 

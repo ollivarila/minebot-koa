@@ -15,191 +15,193 @@ type ContainerState = 'Running' | 'Terminated' | 'Waiting'
 type ContainerAction = 'start' | 'stop' | 'status'
 
 export default class ServerController {
-	private tokenManager: TokenManager = new TokenManager()
-	private hostname: string
+  private tokenManager: TokenManager = new TokenManager()
+  private hostname: string
 
-	constructor(hostname: string) {
-		if (!hostname) {
-			throw new Error('Error: no hostname provided')
-		}
-		this.hostname = hostname
-	}
+  constructor(hostname: string) {
+    if (!hostname) {
+      throw new Error('Error: no hostname provided')
+    }
+    this.hostname = hostname
+  }
 
-	private async authenticate() {
-		const { CLIENT_ID, CLIENT_SECRET, TENANT_ID } = process.env
+  private async authenticate() {
+    const { CLIENT_ID, CLIENT_SECRET, TENANT_ID } = process.env
 
-		if (!CLIENT_ID || !CLIENT_SECRET || !TENANT_ID) {
-			throw new Error('Error: no credentials provided')
-		}
+    if (!CLIENT_ID || !CLIENT_SECRET || !TENANT_ID) {
+      throw new Error('Error: no credentials provided')
+    }
 
-		const url = `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`
+    const url = `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`
 
-		const data = {
-			client_id: CLIENT_ID,
-			client_secret: CLIENT_SECRET,
-			grant_type: 'client_credentials',
-			scope: 'https://management.azure.com/.default',
-		}
+    const data = {
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      grant_type: 'client_credentials',
+      scope: 'https://management.azure.com/.default',
+    }
 
-		const headers = {
-			'content-type': 'application/x-www-form-urlencoded',
-		}
+    const headers = {
+      'content-type': 'application/x-www-form-urlencoded',
+    }
 
-		try {
-			Logger.log('Authenticating...')
-			const response = await axios.post(url, qs.stringify(data), {
-				headers,
-			})
+    try {
+      Logger.log('Authenticating...')
+      const response = await axios.post(url, qs.stringify(data), {
+        headers,
+      })
 
-			this.tokenManager.setToken(response.data['access_token'])
-			Logger.log('Authenticated', this.tokenManager.tokenIsValid())
-		} catch (error) {
-			this.tokenManager.resetToken()
-		}
-	}
+      this.tokenManager.setToken(response.data['access_token'])
+      Logger.log('Authenticated')
+    } catch (error) {
+      this.tokenManager.resetToken()
+    }
+  }
 
-	private async verifyAuth(): Promise<void> {
-		const tokenValid: boolean = this.tokenManager.tokenIsValid()
-		if (!tokenValid) {
-			await this.authenticate()
-		}
-	}
+  private async verifyAuth(): Promise<void> {
+    const tokenValid: boolean = this.tokenManager.tokenIsValid()
+    if (!tokenValid) {
+      await this.authenticate()
+    }
+  }
 
-	public async monitorStartUp(ctx: MyContext): Promise<void> {
-		await this.verifyAuth()
-		const response: ContainerResponse = await this.dispatchContainerAction('status')
+  public async monitorStartUp(ctx: MyContext): Promise<void> {
+    await this.verifyAuth()
+    const response: ContainerResponse = await this.dispatchContainerAction('status')
 
-		if (!response) {
-			Logger.log('monitorStartUp: Something unexpected happened')
-			return
-		}
+    if (!response) {
+      Logger.log('monitorStartUp: Something unexpected happened')
+      return
+    }
 
-		try {
-			const { properties } = response.data
-			const container = properties.containers.pop()
-			const state: ContainerState = container.properties?.instanceView?.currentState?.state
+    try {
+      const { properties } = response.data
+      const container = properties.containers.pop()
+      const state: ContainerState = container.properties?.instanceView?.currentState?.state
 
-			if (state === 'Running') {
-				Logger.log('Server is up and running')
-				sendMessageToChannel(ctx.embedFactory.startedUpEmbed(process.env.HOSTNAME!), ctx.state.channelId)
+      if (state === 'Running') {
+        Logger.log('Server is up and running')
+        sendMessageToChannel(
+          ctx.embedFactory.startedUpEmbed(process.env.HOSTNAME!),
+          ctx.state.channelId,
+        )
 
-				return
-			}
-		} catch (error: any) {
-			Logger.log(error.message)
-		}
+        return
+      }
+    } catch (error: any) {
+      Logger.log(error.message)
+    }
 
-		Logger.log('Server is still starting up')
-		setTimeout(() => this.monitorStartUp(ctx), 5_000)
-	}
+    Logger.log('Server is still starting up')
+    setTimeout(() => this.monitorStartUp(ctx), 5_000)
+  }
 
-	public async monitorShutDown(ctx: MyContext): Promise<void> {
-		await this.verifyAuth()
-		const response: ContainerResponse = await this.dispatchContainerAction('status')
+  public async monitorShutDown(ctx: MyContext): Promise<void> {
+    await this.verifyAuth()
+    const response: ContainerResponse = await this.dispatchContainerAction('status')
 
-		if (!response) {
-			Logger.log('monitorShutDown: Something unexpected happened')
-			return
-		}
-		try {
-			const { properties } = response.data
-			const state: string = properties.instanceView.state
+    if (!response) {
+      Logger.log('monitorShutDown: Something unexpected happened')
+      return
+    }
+    try {
+      const { properties } = response.data
+      const state: string = properties.instanceView.state
 
-			if (state === 'Stopped') {
-				Logger.log('Server is down')
-				sendMessageToChannel(ctx.embedFactory.stoppedEmbed(), ctx.state.channelId)
-				return
-			}
-		} catch (error: any) {
-			Logger.log(error.message)
-		}
+      if (state === 'Stopped') {
+        Logger.log('Server is down')
+        sendMessageToChannel(ctx.embedFactory.stoppedEmbed(), ctx.state.channelId)
+        return
+      }
+    } catch (error: any) {
+      Logger.log(error.message)
+    }
 
-		Logger.log('Server is still shutting down')
-		setTimeout(() => this.monitorShutDown(ctx), 5_000)
-	}
+    Logger.log('Server is still shutting down')
+    setTimeout(() => this.monitorShutDown(ctx), 5_000)
+  }
 
-	public async start(): Promise<void> {
-		try {
-			Logger.log('Starting server...')
-			await this.verifyAuth()
-			await this.dispatchContainerAction('start')
-		} catch (error: any) {
-			Logger.error('Something went wrong with start:\n' + error.message)
-			throw error
-		}
-	}
+  public async start(): Promise<void> {
+    try {
+      Logger.log('Starting server...')
+      await this.verifyAuth()
+      await this.dispatchContainerAction('start')
+    } catch (error: any) {
+      Logger.error('Something went wrong with start:\n' + error.message)
+      throw error
+    }
+  }
 
-	public async stop(): Promise<void> {
-		try {
-			Logger.log('Stopping server...')
-			await this.verifyAuth()
-			await this.dispatchContainerAction('stop')
-		} catch (error: any) {
-			Logger.error('Something went wrong with stop:\n' + error.message)
-			throw error
-		}
-	}
+  public async stop(): Promise<void> {
+    try {
+      Logger.log('Stopping server...')
+      await this.verifyAuth()
+      await this.dispatchContainerAction('stop')
+    } catch (error: any) {
+      Logger.error('Something went wrong with stop:\n' + error.message)
+      throw error
+    }
+  }
 
-	public async status(): Promise<string> {
-		Logger.log('Checking server status...')
-		await this.verifyAuth()
+  public async status(): Promise<string> {
+    Logger.log('Checking server status...')
+    await this.verifyAuth()
 
-		const response: ContainerResponse = await this.dispatchContainerAction('status')
+    const response: ContainerResponse = await this.dispatchContainerAction('status')
 
-		if (!response) {
-			throw new Error('Failed to get container status')
-		}
+    if (!response) {
+      throw new Error('Failed to get container status')
+    }
 
-		const { properties } = response.data
-		const container = properties.containers.pop()
-		const state: ContainerState = container.properties.instanceView.currentState.state
+    const { properties } = response.data
+    const container = properties.containers.pop()
+    const state: ContainerState = container.properties.instanceView.currentState.state
 
-		return state
-	}
+    return state
+  }
 
-	public async getIp(): Promise<string> {
-		Logger.log('Getting server ip...')
-		await this.verifyAuth()
-		const response: ContainerResponse = await this.dispatchContainerAction('status')
+  public async getIp(): Promise<string> {
+    Logger.log('Getting server ip...')
+    await this.verifyAuth()
+    const response: ContainerResponse = await this.dispatchContainerAction('status')
 
-		// @ts-ignore
-		const { properties } = response.data
-		const container = properties.containers.pop()
-		const state: ContainerState = container.properties.instanceView.currentState.state
+    // @ts-ignore
+    const { properties } = response.data
+    const container = properties.containers.pop()
+    const state: ContainerState = container.properties.instanceView.currentState.state
 
-		if (state === 'Running') {
-			return this.hostname
-		}
+    if (state === 'Running') {
+      return this.hostname
+    }
 
-		return "Server state is not yet 'Running'"
-	}
+    return "Server state is not yet 'Running'"
+  }
 
-	private async dispatchContainerAction(action: ContainerAction): Promise<ContainerResponse> {
-		const { SUBSCRIPTION_ID, RESOURCE_GROUP, CONTAINER_GROUP } = process.env
+  private async dispatchContainerAction(action: ContainerAction): Promise<ContainerResponse> {
+    const { SUBSCRIPTION_ID, RESOURCE_GROUP, CONTAINER_GROUP } = process.env
 
-		if (!SUBSCRIPTION_ID || !RESOURCE_GROUP || !CONTAINER_GROUP) {
-			throw new Error('Error: necessary environment variables missing')
-		}
+    if (!SUBSCRIPTION_ID || !RESOURCE_GROUP || !CONTAINER_GROUP) {
+      throw new Error('Error: necessary environment variables missing')
+    }
 
-		const headers: RawAxiosRequestHeaders = {
-			Authorization: `Bearer ${this.tokenManager.getToken()}`,
-		}
+    const headers: RawAxiosRequestHeaders = {
+      Authorization: `Bearer ${this.tokenManager.getToken()}`,
+    }
 
-		try {
-			if (action === 'status') {
-				const url: string = `https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.ContainerInstance/containerGroups/${CONTAINER_GROUP}?api-version=2022-10-01-preview`
-				return axios.get(url, {
-					headers,
-				})
-			}
+    try {
+      if (action === 'status') {
+        const url: string = `https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.ContainerInstance/containerGroups/${CONTAINER_GROUP}?api-version=2022-10-01-preview`
+        return axios.get(url, {
+          headers,
+        })
+      }
 
-			const url: string = `https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.ContainerInstance/containerGroups/${CONTAINER_GROUP}/${action}?api-version=2022-10-01-preview`
-			console.log(url)
-			return axios.post(url, undefined, {
-				headers,
-			})
-		} catch (error) {
-			return null
-		}
-	}
+      const url: string = `https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.ContainerInstance/containerGroups/${CONTAINER_GROUP}/${action}?api-version=2022-10-01-preview`
+      return axios.post(url, undefined, {
+        headers,
+      })
+    } catch (error) {
+      return null
+    }
+  }
 }
