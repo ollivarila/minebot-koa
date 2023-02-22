@@ -5,5 +5,7 @@ node_modules
 .git
 jest.config.js
 
+.env
 test
-coverage
+coverage 
+secrets.toml

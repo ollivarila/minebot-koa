@@ -1,4 +1,4 @@
-# fly.toml file generated for minebot-skd on 2023-02-20T23:30:45+02:00
+# fly.toml file generated for minebot-skd on 2023-02-21T11:39:58+02:00
 
 app = "minebot-skd"
 kill_signal = "SIGINT"
@@ -6,6 +6,7 @@ kill_timeout = 5
 processes = []
 
 [env]
+  PORT = 8080
 
 [experimental]
   auto_rollback = true
