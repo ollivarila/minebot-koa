@@ -37,5 +37,5 @@ app.use(helloRouter)
 const port: string | number = process.env.PORT || 8080
 
 app.listen(port, (): void => {
-	console.log('Server listening on ' + port)
+	Logger.log('Server listening on ' + port)
 })
