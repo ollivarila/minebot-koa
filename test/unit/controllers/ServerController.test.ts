@@ -12,7 +12,7 @@ describe('ServerController', () => {
 	process.env.HOSTNAME = 'test'
 
 	beforeEach(() => {
-		serverController = new ServerController(process.env.HOSTNAME!)
+		serverController = new ServerController()
 		mockAxios.reset()
 	})
 

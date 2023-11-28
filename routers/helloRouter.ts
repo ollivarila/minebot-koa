@@ -1,10 +1,9 @@
-import { MyContext } from './interactionRouter'
+import { MyContext, MyState } from './interactionRouter'
 import Router from 'koa-router'
 
-const helloRouter: Router = new Router()
+const helloRouter = new Router<MyState, MyContext>()
 
-// @ts-ignore
-helloRouter.get('/hello', async (ctx: MyContext) => {
+helloRouter.get('/hello', async (ctx) => {
 	ctx.reply('Hello World!', ctx)
 })
 

@@ -8,7 +8,7 @@ import Router from 'koa-router'
 import EmbedFactory from '../utils/EmbedFactory'
 import { sendMessageToChannel } from '../utils/discordRequests'
 
-interface MyState extends DefaultState {
+export interface MyState extends DefaultState {
 	discordId: DiscordId
 	channelId: string
 	monitor: Monitor
@@ -29,23 +29,14 @@ export enum Monitor {
 	NOTHING,
 }
 
-const authorizedUsers: Array<DiscordId> = [
-	'188329879861723136',
-	// '209654420999241728',
-	// '208247677585063936',
-	// '430991331880337408',
-	// '182935119625977867',
-	// '405711174668124160',
-]
+const authorizedUsers: Array<DiscordId> = ['188329879861723136']
 
 dotenv.config()
 
-const interactionRouter: Router = new Router()
+const interactionRouter = new Router<MyState, MyContext>()
 
-// @ts-ignore
 interactionRouter.post(
 	'/api/interactions',
-	// @ts-ignore
 	verifyDiscordRequest,
 	userParser,
 	channelIdParser,
