@@ -1,10 +1,10 @@
-import { MyContext, MyState } from './interactionRouter'
+import { MBContext, MBState } from './interactionRouter'
 import { checkAuth } from '../utils/middleware'
 import { HttpStatusCode } from 'axios'
 import Router from 'koa-router'
 import Logger from '../utils/Logger'
 
-const shutdownRouter = new Router<MyState, MyContext>()
+const shutdownRouter = new Router<MBState, MBContext>()
 
 shutdownRouter.post('/api/server/shutdown', checkAuth, async (ctx) => {
 	try {
