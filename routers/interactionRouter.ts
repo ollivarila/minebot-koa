@@ -66,27 +66,19 @@ interactionRouter.post(
   },
 )
 
+const commands: Record<string, (ctx: MyContext) => Promise<void>> = {
+  serverup: handleServerUp,
+  serverdown: handleServerDown,
+  getip: handleGetIp,
+  status: handleGetStatus,
+}
+
 async function handleInteractions(ctx: MyContext): Promise<void> {
   // @ts-expect-error
   const command = ctx.request.body.data.name
   ctx.state.monitor = Monitor.NOTHING
-
-  switch (command) {
-    case 'serverup':
-      await handleServerUp(ctx)
-      break
-    case 'serverdown':
-      await handleServerDown(ctx)
-      break
-    case 'getip':
-      await handleGetIp(ctx)
-      break
-    case 'status':
-      await handleGetStatus(ctx)
-      break
-    default:
-      break
-  }
+  const handler = commands[command]
+  await handler(ctx)
 }
 
 async function handleServerUp(ctx: MyContext): Promise<void> {
@@ -99,11 +91,10 @@ async function handleServerUp(ctx: MyContext): Promise<void> {
     ctx.server.start()
   } catch (error: any) {
     ctx.reply(ctx.embedFactory.errorEmbed(error.message), ctx)
+    return
   }
 
-  ctx.server.monitorStartUp(ctx)
-
-  await ctx.reply('Starting server...', ctx)
+  await ctx.reply('Server started!', ctx)
 }
 
 async function handleServerDown(ctx: MyContext): Promise<void> {
@@ -116,16 +107,14 @@ async function handleServerDown(ctx: MyContext): Promise<void> {
     await ctx.server.stop()
   } catch (error: any) {
     ctx.reply(ctx.embedFactory.errorEmbed(error.message), ctx)
+    return
   }
-
-  ctx.server.monitorShutDown(ctx)
-
-  await ctx.reply('Stopping server...', ctx)
+  await ctx.reply('Server stopped!', ctx)
 }
 
 async function handleGetIp(ctx: MyContext): Promise<void> {
   try {
-    const ip: string = await ctx.server.getIp()
+    const ip: string = ctx.server.getIp()
     ctx.reply(ctx.embedFactory.ipEmbed(ip), ctx)
   } catch (error: any) {
     ctx.reply(ctx.embedFactory.errorEmbed(error.message), ctx)
