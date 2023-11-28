@@ -3,6 +3,7 @@ import { InteractionResponseType, InteractionType } from 'discord.js'
 import { sendMessageToChannel } from '../utils/discordRequests'
 import { DiscordId, MBContext } from '../interfaces'
 import createRouter from '../utils/createRouter'
+import Logger from '../utils/Logger'
 
 const authorizedUsers: DiscordId[] = [
   '188329879861723136',
@@ -51,15 +52,23 @@ async function handleInteractions(ctx: MBContext): Promise<void> {
 
 async function handleServerUp(ctx: MBContext): Promise<void> {
   if (!authorized(ctx.state.discordId)) {
+    Logger.log("User isn't authorized to start server")
     ctx.reply('You are not authorized!', ctx)
     return
   }
 
-  await ctx.reply('Starting server...', ctx)
+  Logger.log('Server startup requested')
+  ctx.reply('Starting server...', ctx)
+  startAndMonitor(ctx)
+  Logger.log('Server started successfully!')
+}
+
+async function startAndMonitor(ctx: MBContext) {
   try {
     await ctx.server.start()
   } catch (error: any) {
-    ctx.reply(ctx.embedFactory.errorEmbed(error.message), ctx)
+    Logger.error('Error starting server: ', error.message)
+    await sendMessageToChannel(ctx.embedFactory.errorEmbed(error.message), ctx.state.channelId)
     return
   }
   await sendMessageToChannel(
@@ -80,7 +89,7 @@ async function handleServerDown(ctx: MBContext): Promise<void> {
     ctx.reply(ctx.embedFactory.errorEmbed(error.message), ctx)
     return
   }
-  await ctx.reply('Server stopped!', ctx)
+  ctx.reply('Server stopped!', ctx)
 }
 
 async function handleGetIp(ctx: MBContext): Promise<void> {
@@ -95,13 +104,13 @@ async function handleGetIp(ctx: MBContext): Promise<void> {
 async function handleGetStatus(ctx: MBContext): Promise<void> {
   try {
     const status: string = await ctx.server.status()
-    ctx.reply(ctx.embedFactory.statusEmbed(status, process.env.HOSTNAME!), ctx)
+    ctx.reply(ctx.embedFactory.statusEmbed(status, ctx.server.getIp()), ctx)
   } catch (error: any) {
     ctx.reply(ctx.embedFactory.errorEmbed(error.message), ctx)
   }
 }
 
-async function authorized(discordId: DiscordId): Promise<boolean> {
+function authorized(discordId: DiscordId): boolean {
   return authorizedUsers.includes(discordId)
 }
 

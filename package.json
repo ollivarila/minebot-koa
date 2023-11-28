@@ -11,6 +11,7 @@
     "test:ci": "NODE_ENV=test jest --verbose --detectOpenHandles --forceExit --runInBand",
     "test:coverage": "NODE_ENV=test jest --verbose --detectOpenHandles --forceExit --runInBand --coverage",
     "deploy": "npm run build && fly deploy",
+    "deploy:commands": "ts-node utils/deployCommands.ts",
     "thing": "ts-node playground.ts"
   },
   "author": "Olli Varila",
