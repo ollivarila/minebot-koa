@@ -1,7 +1,6 @@
-import { MBContext, MBState } from './interactionRouter'
-import Router from 'koa-router'
+import createRouter from '../utils/createRouter'
 
-const helloRouter = new Router<MBState, MBContext>()
+const helloRouter = createRouter()
 
 helloRouter.get('/hello', async (ctx) => {
 	ctx.reply('Hello World!', ctx)

@@ -1,12 +1,12 @@
 import { channelIdParser, userParser, verifyDiscordRequest } from '../utils/middleware'
 import { InteractionResponseType, InteractionType } from 'discord.js'
-import Router from 'koa-router'
 import { sendMessageToChannel } from '../utils/discordRequests'
-import { DiscordId, MBContext, MBState } from '../interfaces'
+import { DiscordId, MBContext } from '../interfaces'
+import createRouter from '../utils/createRouter'
 
 const authorizedUsers: DiscordId[] = ['188329879861723136']
 
-const interactionRouter = new Router<MBState, MBContext>()
+const interactionRouter = createRouter()
 
 interactionRouter.post(
 	'/api/interactions',
