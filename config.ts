@@ -8,6 +8,8 @@ const configSchema = z.object({
 	PORT: str('8080'),
 	NODE_ENV: str('development'),
 	MY_TOKEN: z.string(),
+	PUBLIC_KEY: z.string(),
+	DISCORD_TOKEN: z.string(),
 	SUBSCRIPTION_ID: z.string(),
 	RESOURCE_GROUP: z.string(),
 	CONTAINER_GROUP: z.string(),

@@ -1,17 +1,16 @@
 import { verifyKey } from 'discord-interactions'
 import { Context, Next } from 'koa'
-import dotenv from 'dotenv'
-import { DiscordId, MBContext } from '../routers/interactionRouter'
 import { HttpStatusCode } from 'axios'
-import { Monitor } from '../routers/interactionRouter'
 import Logger from './Logger'
+import { MBContext } from '../interfaces'
+import config from '../config'
 
 export const verifyDiscordRequest = async (ctx: MBContext, next: Next): Promise<void> => {
-	const rawBody: string = ctx.request.rawBody
-	const signature: string = ctx.get('X-Signature-Ed25519')!
-	const timestamp: string = ctx.get('X-Signature-Timestamp')!
+	const rawBody = ctx.request.rawBody
+	const signature = ctx.get('X-Signature-Ed25519') ?? ''
+	const timestamp = ctx.get('X-Signature-Timestamp') ?? ''
 
-	const verified: boolean = verifyKey(rawBody, signature, timestamp, process.env.PUBLIC_KEY!)
+	const verified: boolean = verifyKey(rawBody, signature, timestamp, config.PUBLIC_KEY)
 	ctx.assert(verified, 401, 'invalid request signature')
 	await next()
 }

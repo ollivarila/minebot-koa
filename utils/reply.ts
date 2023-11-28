@@ -1,5 +1,5 @@
 import { InteractionResponseType } from 'discord.js'
-import { MBContext } from '../routers/interactionRouter'
+import { MBContext } from '../interfaces'
 
 export type ReplyFunction = (data: string | object, ctx: MBContext) => Promise<void>
 
